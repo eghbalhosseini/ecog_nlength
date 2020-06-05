@@ -9,14 +9,20 @@ if 1
     addpath(genpath('~/MyCodes/basic-ecog-tools/activeBrain'));
     addpath(genpath('~/MyCodes/basic-ecog-tools/ecog-filters'));
     addpath(genpath('~/MyCodes/basic-ecog-tools/mex'));
+    addpath(genpath('/Users/hsmall/Dropbox (MIT)/eCoG/ecog_data_for_greta_and_hannah/code'))
 end 
 
+%% creating subject op info
+
+sub_info_path='/Users/hsmall/Dropbox (MIT)/eCoG/ecog_data_for_greta_and_hannah/ecog_nlength-master/sub_operation_info/';
+create_sub_operation_info_ALBANY(sub_info_path);
+
 %%
-subject_name='AMC026';
-data_path='/Users/eghbalhosseini/MyData/ecog_nlength';
-sub_info_path='/Users/eghbalhosseini/MyData/ecog_nlength/sub_operation_info';
-save_path='/Users/eghbalhosseini/MyData/ecog_nlength/crunched/';
-d= dir(strcat(data_path,'/**/',subject_name,'/raw/ECOG*.dat'));
+subject_name='AMC082';
+experiment_name ='Nlength';
+data_path='/Users/hsmall/Dropbox (MIT)/eCoG/ecog_data_for_greta_and_hannah/data/';
+save_path='/Users/hsmall/Dropbox (MIT)/eCoG/ecog_data_for_greta_and_hannah/crunched/';
+d= dir([data_path,'/AMC082/raw/ECOG*.dat']);
 d_subj_op_info=dir(strcat(sub_info_path,'/',subject_name,'_operation_info.mat'));
 fprintf(' %d .dat files were found \n', length(d))
 d_image= dir([data_path,'/**/*brain.mat']);
@@ -24,7 +30,7 @@ d_info=arrayfun(@(x) {strcat(d_subj_op_info(x).folder,'/',d_subj_op_info(x).name
 subject_op_info=load(d_info{1});
 subject_op_info=subject_op_info.(strcat(subject_name,'_op'));
 %% find noisy channel over all sessions 
-d_files=arrayfun(@(x) {strcat(d(x).folder,'/',d(x).name)}, 1:length(d));
+d_files=transpose(arrayfun(@(x) {strcat(d(x).folder,'/',d(x).name)}, 1:length(d)));
 subject_op_info=find_noise_free_electrodes(d_files,subject_op_info);
 %%
 for i=1:length(d_files)
@@ -46,7 +52,7 @@ for i=1:length(d_files)
     session_name=d(i).name(1:end-4);     
     % start with an empty strcuture for data and info 
     list_var_to_get={''};
-    stim_types={'S','W','N','J'};
+    ConditionName_indx=cell2mat(cellfun(@(x) strcmp(x,'ConditionName'),parameters.Stimuli.RowLabels,'UniformOutput',false))  
     dat={};
     info=struct;
     pre_trial_time=0.4; % in sec 
@@ -66,6 +72,7 @@ for i=1:length(d_files)
     wordtype_indx=cell2mat(cellfun(@(x) strcmp(x,'Condition'),parameters.Stimuli.RowLabels,'UniformOutput',false)) | ...
         cell2mat(cellfun(@(x) strcmp(x,'WordType'),parameters.Stimuli.RowLabels,'UniformOutput',false));
     StimType_indx=cell2mat(cellfun(@(x) strcmp(x,'StimType'),parameters.Stimuli.RowLabels,'UniformOutput',false));
+    ConditionName_indx=cell2mat(cellfun(@(x) strcmp(x,'ConditionName'),parameters.Stimuli.RowLabels,'UniformOutput',false))  
     IsRight_indx=cell2mat(cellfun(@(x) strcmp(x,'IsRight'),parameters.Stimuli.RowLabels,'UniformOutput',false)) | cell2mat(cellfun(@(x) strcmp(x,'IsProbeCorrect'),parameters.Stimuli.RowLabels,'UniformOutput',false));
     %
     trial_for_stimuli_seq=trials_value(trials_indx,:);
@@ -105,10 +112,11 @@ for i=1:length(d_files)
     for k=1:length(trial_seq_cell)
         trial_indx=trial_seq_cell{k};
         % find trial type 
-        wordtype=trials_value(find(wordtype_indx),trial_for_stimuli_seq==trial_seq_cell{k,2});
+        wordtype=stimuli_value(find(ConditionName_indx),trial_for_stimuli_seq==trial_seq_cell{k,2});
         wordtype(isnan(wordtype))=[];
         if ~isempty(wordtype)
-            info.word_type{k,1}=stim_types{unique(wordtype)};
+            %info.word_type{k,1}=stim_types{unique(wordtype)};
+            info.word_type{k,1}=wordtype;
         else
             info.word_type{k,1}='0';
         end 
@@ -311,7 +319,7 @@ for i=1:length(d_files)
     eval(strcat(subject_name,'_',session_name,'.data=dat')) ;
     eval(strcat(subject_name,'_',session_name,'.info=info'));
     %save(strcat(d(i).folder,'/',d(i).name),'data','info','-v7.3');
-    save(strcat(save_path,subject_name,'_',session_name,'_crunched_v2.mat'),strcat(subject_name,'_',session_name),'-v7.3');
+    save(strcat(save_path,subject_name,'_',experiment_name,'_',session_name,'_crunched_v2.mat'),strcat(subject_name,'_',session_name),'-v7.3');
     clear states parameters dat info signal_bandpass signal_envelope signal_envelope_downsample
     eval(['clear',' ',subject_name,'_',session_name]);
 end
