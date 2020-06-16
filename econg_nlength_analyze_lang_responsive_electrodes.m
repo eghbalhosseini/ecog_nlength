@@ -3,10 +3,12 @@ clear all
 close all
 home 
 %% specify where the data is
-main_path='~/MyData/ecog_nlength/';
-data_path='~/MyData/ecog_nlength/crunched/';
+% main_path='~/MyData/ecog_nlength/';
+% data_path='~/MyData/ecog_nlength/crunched/';
+data_path='C:\Users\greta\Dropbox (MIT)\ECoG_data\crunched\';
+main_path='C:\Users\greta\Dropbox (MIT)\ECoG_data\crunched\';
 analysis_path=strcat(main_path,'analysis/distributed_oscilatory_power/');
-subject_id='AMC026';
+subject_id='AMC082';
 d_data= dir(strcat(data_path,'/',subject_id,'*_crunched_v2.mat'));
 fprintf(' %d .mat files were found \n', length(d_sn));
 d_data=arrayfun(@(x) strcat(d_data(x).folder,'/',d_data(x).name),[1:length(d_data)]','uni',false);

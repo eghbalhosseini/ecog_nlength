@@ -88,7 +88,7 @@ end
 if unique(SourceCh)~=length(param.channels)
     warning('error: channel ids and number dont match up! changing the param.channels to reflect SourceCh'); 
     param.channels=[1:(unique(SourceCh))]';
-    keyboard
+%    keyboard
 end 
 
 %%
