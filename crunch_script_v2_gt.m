@@ -27,7 +27,7 @@ subject_name='AMC082';
 experiment_name ='Nlength';
 data_path='C:\Users\greta\Dropbox (MIT)\ECoG_data\';
 save_path='C:\Users\greta\Dropbox (MIT)\ECoG_data\crunched\';
-d=dir([data_path,'\',subject_name,'\DATA\DAY3\MITNLengthSentences\ECOG*.dat']);
+d=dir([data_path,'\',subject_name,'\DATA\DAY3\MITNLengthSentences\ECOG001\ECOG*.dat']);
 d_subj_op_info=dir(strcat(sub_info_path,'/',subject_name,'_operation_info.mat'));
 fprintf(' %d .dat files were found \n', length(d))
 d_image=dir([data_path,'/**/*brain.mat']);
@@ -38,6 +38,10 @@ subject_op_info=subject_op_info.(strcat(subject_name,'_op'));
 d_files=transpose(arrayfun(@(x) {strcat(d(x).folder,'/',d(x).name)}, 1:length(d)));
 subject_op_info=find_noise_free_electrodes(d_files,subject_op_info);
 %%
+if ~exist(save_path)
+    mkdir(save_path)
+end
+
 for i=1:length(d_files)
     fprintf('extracting %s from %s \n',d_files{i});
 
@@ -118,7 +122,7 @@ for i=1:length(d_files)
         trial_indx=trial_seq_cell{k};
         % find trial type 
         wordtype=stimuli_value(find(ConditionName_indx),trial_for_stimuli_seq==trial_seq_cell{k,2});
-        wordtype(isnan(wordtype))=[];
+        wordtype(isnan(k))=[];
         if ~isempty(wordtype)
             %info.word_type{k,1}=stim_types{unique(wordtype)};
             info.word_type{k,1}=wordtype;
