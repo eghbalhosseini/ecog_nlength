@@ -5,7 +5,7 @@ home
 %% specify where the data is
 main_path='~/MyData/ecog_nlength/';
 data_path='~/MyData/ecog_nlength/crunched/';
-analysis_path=strcat(main_path,'analysis/distributed_oscilatory_power/');
+analysis_path=strcat(main_path,'analysis/language_responsive_electrodes/');
 subject_id='AMC026';
 d_data= dir(strcat(data_path,'/',subject_id,'*_crunched_v2.mat'));
 fprintf(' %d .mat files were found \n', length(d_sn));
