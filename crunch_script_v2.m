@@ -77,7 +77,7 @@ for i=1:length(d_files)
     wordtype_indx=cell2mat(cellfun(@(x) strcmp(x,'Condition'),parameters.Stimuli.RowLabels,'UniformOutput',false)) | ...
         cell2mat(cellfun(@(x) strcmp(x,'WordType'),parameters.Stimuli.RowLabels,'UniformOutput',false));
     StimType_indx=cell2mat(cellfun(@(x) strcmp(x,'StimType'),parameters.Stimuli.RowLabels,'UniformOutput',false));
-    ConditionName_indx=cell2mat(cellfun(@(x) strcmp(x,'ConditionName'),parameters.Stimuli.RowLabels,'UniformOutput',false))  
+    ConditionName_indx=cell2mat(cellfun(@(x) strcmp(x,'ConditionName'),parameters.Stimuli.RowLabels,'UniformOutput',false));  
     IsRight_indx=cell2mat(cellfun(@(x) strcmp(x,'IsRight'),parameters.Stimuli.RowLabels,'UniformOutput',false)) | cell2mat(cellfun(@(x) strcmp(x,'IsProbeCorrect'),parameters.Stimuli.RowLabels,'UniformOutput',false));
     %
     trial_for_stimuli_seq=trials_value(trials_indx,:);
