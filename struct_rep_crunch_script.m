@@ -9,9 +9,9 @@ if 1
     %addpath(genpath('~/MyCodes/evlab_ecog_tools/'));
 end 
 %%
-name = 'HS';
+name = 'GT';
 
-subject_name='AMC083';
+subject_name='AMC082';
 experiment_name ='MITNLengthSentences';
 
 data_path='~/MyData/ecog-sentence/subjects_raw/';
@@ -29,8 +29,39 @@ if strcmp(name,'HS') == 1
     datapath = [ecog_path filesep 'DATA' filesep experiment_name filesep ];
     master_sub_info_path = [ecog_path filesep 'subject_op_info_MASTER' filesep];
     d = dir([datapath subject_name filesep experiment_name filesep 'ECOG001' filesep 'ECOG*.dat']);
-  
+
     save_path = [ecog_path 'crunched' filesep experiment_name filesep]; %save it into an experiment specific folder
+    if ~exist(save_path, 'dir')
+        mkdir(save_path)
+    end
+    
+    %save path specifically for expt sub_op_info
+    expt_sub_op_info_savepath = [save_path 'sub_op_info_' experiment_name filesep];
+    
+    if ~exist(expt_sub_op_info_savepath,'dir')
+        mkdir(expt_sub_op_info_savepath)
+    end
+    
+end
+
+if strcmp(name,'GT') == 1
+    fprintf('adding evlab ecog tools to path (Greta computer) \n');
+    addpath(genpath('\GitHub\evlab_ecog_tools\'));
+    addpath(genpath('\GitHub\evlab_ecog_tools\ecog-filters\'));
+    addpath(genpath('\GitHub\evlab_ecog_tools\albany_mex_files'));
+    addpath(genpath('\GitHub\evlab_ecog_tools\Colormaps'));
+    
+
+    save_path='C:\Users\greta\Dropbox (MIT)\ECoG_data\crunched\';
+    d=dir([data_path,'\',subject_name,'\DATA\DAY3\MITNLengthSentences\ECOG001\ECOG*.dat']);
+    d_subj_op_info=dir(strcat(sub_info_path,'/',subject_name,'_operation_info.mat'));
+    
+    ecog_path = ['C:\Users\greta\Dropbox (MIT)\ECoG'];
+    datapath = [ecog_path filesep 'DATA' filesep experiment_name filesep ];
+    master_sub_info_path = [ecog_path filesep 'subject_op_info_MASTER'];
+    d = dir([datapath subject_name filesep 'ECOG001' filesep 'ECOG*.dat']);
+    
+    save_path = [ecog_path filesep 'crunched' filesep experiment_name filesep]; %save it into an experiment specific folder
     if ~exist(save_path, 'dir')
         mkdir(save_path)
     end
@@ -62,7 +93,7 @@ expt_sub_op_info_mat_filename = [expt_sub_op_info_savepath subject_name '_' expe
 if ~exist(expt_sub_op_info_mat_filename)
     %create operational info here?
     d_subj_op_info=dir([master_sub_info_path filesep subject_name '_operation_info.mat']);
-    d_info=arrayfun(@(x) {strcat(d_subj_op_info(x).folder,'/',d_subj_op_info(x).name)}, 1:length(d_subj_op_info));
+    d_info=arrayfun(@(x) {strcat(d_subj_op_info(x).folder,filesep,d_subj_op_info(x).name)}, 1:length(d_subj_op_info));
     subject_op_info=load(d_info{1},sprintf('%s_op',subject_name));
     subject_op_info=subject_op_info.([subject_name '_op']);
 else
