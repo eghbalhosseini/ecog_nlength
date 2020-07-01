@@ -1,4 +1,4 @@
-function [output_op_info]=find_noise_free_electrodes(datafile,subject_op_info, experiment_name)
+function [output_op_info]=find_noise_free_electrodes(datafile,subject_op_info)
     if ~isempty(subject_op_info)
     %ecog_ch=subject_op_info.op_info.ecog_ch;
     ref_ch=subject_op_info.op_info.Ref;
@@ -177,15 +177,48 @@ end
 %% plot the dataset throughout 
 session_length=[1;session_length];
 session_start=cumsum(session_length);
-param.channels_deselect = []; %no channels deselected yet!
-fprintf('Visually inspect the pre- line noise removal and common source averaging signal \n')
-plot_signal_over_time(signal,param,session_start,'pre-common source averaging')
+% get sections 
+t_length=25e4;
+kk_total=ceil(size(signal,1)/t_length);
+x_cell=mat2cell(signal',ones(1,size(signal,2)));
+min_max=mean(cell2mat(cellfun(@(y) [min(y),max(y)],x_cell,'UniformOutput',false)));
+x_norm_cell=cellfun(@(x) (x-min_max(1))./(min_max(2)-min_max(1)),x_cell,'UniformOutput',false);
+% 
+figure(1);
+%colors=inferno(size(x_norm_cell,1));
+col_inf=inferno(floor(.8*size(x_norm_cell,1)));
+col_vir=viridis(floor(.8*size(x_norm_cell,1)));
+colors=[col_vir(1:floor(size(x_norm_cell,1)/2),:);col_inf(1:(floor(size(x_norm_cell,1)/2)+1),:)];
+for kk=1:kk_total
+    clf;
+    set(gcf,'color',[.7,.7,.7],'position',[17,1,2454,1337])
+    ax=axes('position',[.02,.02,.95,.95]);
+    hold on
+    session_end=min([(kk*t_length),size(signal,1)]);
+    t_window=((kk-1)*t_length+1):2:(session_end);
+    
+    arrayfun(@(x) plot(t_window,x_norm_cell{x}(t_window)+x-.5,'color',colors(x,:)),[1:size(x_norm_cell,1)])
+    
+    set(ax,'ytick',[1:size(x_norm_cell,1)]);
+    set(ax,'yticklabel','')
+    arrayfun(@(x) text(t_window(1),x,num2str(x),'Color',colors(x,:),'HorizontalAlignment','right','VerticalAlignment','middle'),[1:size(x_norm_cell,1)]);
+    set(ax,'ylim',[0,size(x_norm_cell,1)+1])
+    if any(ismember(t_window,session_start))
+        arrayfun(@(x) plot([t_window(x),t_window(x)],[0,size(x_norm_cell,1)+1],'k-','LineWidth',2),find(ismember(t_window,session_start)))
+        session_name=num2str(find(ismember(session_start,t_window)));
+        arrayfun(@(x) text(t_window(x),size(x_norm_cell,1)+1,['sess: ',session_name],'VerticalAlignment','bottom','fontsize',20),find(ismember(t_window,session_start)))
+    end 
+    shg;
+    title({'pre common source averaging',[num2str(kk),' of ', num2str(kk_total)]})
+    pause
+end 
+close all; 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% MEASURE LINE-NOISE POWER BEFORE SIGNAL PROCESSING
+% MEASSURE LINE-NOISE POWER BEFORE SIGNAL PROCESSING
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-fprintf(1, '> Measuring 60 Hz noise power before signal processing \n');
+fprintf(1, '> Meassuring 60 Hz noise power before signal processing \n');
 fprintf(1,'[');
 parfor idx_channel=1:size(signal,2),
     % calculate average root-mean-square of the line-noise
@@ -252,8 +285,6 @@ param.channels_noise = param.channels( signal_noise > (mean(signal_noise)+1.5*st
 param.channels_deselect = sort(unique([reshape(param.channels_noise,1,[]),unique([ref_ch,gnd_ch,bad_ch]) ]));
 param.channels_selected = setdiff(param.channels,param.channels_deselect);
 
-channels_removed_sig_line_noise = param.channels_deselect;
-
 fprintf(1, '> Not using %d channels for common source averaging: ',length(param.channels_deselect));
 fprintf(1, '%d ',param.channels_deselect);
 fprintf(1, '\n');
@@ -301,7 +332,7 @@ if isfield(parameters{1},'DeviceIDMaster') && param.filter_car > 0,
 end 
 fprintf(1,'] done\n');
 %% 
-fprintf(1, '> Measuring 60 Hz noise power after signal processing \n');
+fprintf(1, '> Meassuring 60 Hz noise power after signal processing \n');
 
 fprintf(1,'[');
 % for each channels calculate the root-mean-square line-noise power
@@ -336,53 +367,50 @@ parfor idx_channel=1:size(signal,2),
 end
 fprintf(1,'] done\n');
 %% plot post filtering 
-fprintf('Visually inspect the post filtering signal for manual noisy channel removal \n');
-plot_signal_over_time(signal,param,session_start,'post 60 Hz noise removal, common source averaging, and notch filtering')
+t_length=25e4;
+kk_total=ceil(size(signal,1)/t_length);
+x_cell=mat2cell(signal',ones(1,size(signal,2)));
+valid_channels=ones(1,size(signal,2));
+valid_channels(param.channels_deselect)=nan;
+x_cell=arrayfun(@(x) x_cell{x}*valid_channels(x),1:size(signal,2),'UniformOutput',false);
+x_cell=x_cell';
+min_max=nanmean(cell2mat(cellfun(@(y) [min(y),max(y)],x_cell,'UniformOutput',false)));
+x_norm_cell=cellfun(@(x) (x-min_max(1))./(.5*(min_max(2)-min_max(1))),x_cell,'UniformOutput',false);
+% 
+figure(1);
 
-%% 
-x = 1;
-channels_removed_automatically = param.channels_deselect;
-channels_removed_manually = [];
-while ~isempty(x)
-    prompt='Additional channels to remove? Format: [1,2] or [1:10, 20:25, 31] (if you are done removing channels, press Enter)  \n';
-    x=input(prompt);
-    if ~isempty(x)
-         %save the channels that were automatically removed due to noise
-        fprintf(['Removing channels... \n\n']);
-        channels_removed_manually = [channels_removed_manually x];
-        param.channels_deselect=sort([param.channels_deselect,x]); %all channels that are being removed, including the user specified channels and channels removed due to noise
-        param.channels_selected = setdiff(param.channels,param.channels_deselect);
-        fprintf('visually inspect signal for manual channel removal \n');
-        plot_signal_over_time(signal,param,session_start,'post 60 Hz noise removal, common source averaging, and notch filtering and manual removal of channels')
-        
-    end
-end
-
-prompt='enter your full name please :) -- ';
-user_name = input(prompt, 's');
-
-%% add the results to subject_op_info, experiment specific!!
-subject_op_info.op_info.visually_inspected_by = user_name;
-subject_op_info.op_info.visually_inspected = 1;
-subject_op_info.op_info.visually_inspected_date = datestr(now, 'yyyy/mm/dd-HH:MM');
-subject_op_info.op_info.experiment_name = experiment_name;
-subject_op_info.op_info.channels_removed_sig_line_noise = channels_removed_sig_line_noise;
-subject_op_info.op_info.channels_removed_automatically_all = channels_removed_automatically;
-subject_op_info.op_info.channels_removed_manually= unique(channels_removed_manually);
-subject_op_info.op_info.transmit_chan=param.channels;
-subject_op_info.op_info.unselected_channels=param.channels_deselect;
-subject_op_info.op_info.clean_channels=param.channels_selected;
-subject_op_info.op_info.sampling_rate=sampling_rate;
-subject_op_info.op_info.channel_noise_across_all_sess=signal_noise_before;
-subject_op_info.op_info.channel_denoise_across_all_sess=signal_noise_after;
-
-output_op_info=subject_op_info;
-
+col_inf=inferno(floor(.8*size(x_norm_cell,1)));
+col_vir=viridis(floor(.8*size(x_norm_cell,1)));
+colors=[col_vir(1:floor(size(x_norm_cell,1)/2),:);col_inf(1:(floor(size(x_norm_cell,1)/2)+1),:)];
+for kk=1:kk_total
+    clf;
+    set(gcf,'color',[.7,.7,.7],'position',[17,1,2454,1337])
+    ax=axes('position',[.02,.02,.95,.95]);
+    hold on
+    session_end=min([(kk*t_length),size(signal,1)]);
+    t_window=((kk-1)*t_length+1):2:(session_end);
+    arrayfun(@(x) plot(t_window,x_norm_cell{x}(t_window)+x-1,'color',colors(x,:)),param.channels)
+    
+    set(ax,'ytick',[1:size(x_norm_cell,1)]);
+    set(ax,'yticklabel','')
+    arrayfun(@(x) text(t_window(1),x,num2str(x),'Color',colors(x,:),'HorizontalAlignment','right','VerticalAlignment','middle'),param.channels);
+    set(ax,'ylim',[0,size(x_norm_cell,1)+1]);
+    if any(ismember(t_window,session_start))
+        arrayfun(@(x) plot([t_window(x),t_window(x)],[0,size(x_norm_cell,1)+1],'k-','LineWidth',2),find(ismember(t_window,session_start)))
+        session_name=num2str(find(ismember(session_start,t_window)));
+        arrayfun(@(x) text(t_window(x),size(x_norm_cell,1)+1,['sess: ',session_name],'VerticalAlignment','bottom','fontsize',20),find(ismember(t_window,session_start)))
+    end 
+    shg;
+    title({'post common source averaging',[num2str(kk),' of ', num2str(kk_total)]})
+    pause
 end 
-
-function []= plot_signal_over_time(signal,param,session_start,plot_title)
-    fprintf('Figure is loading... \n');
-    fprintf('Figure will advance through time when you press any key.\n')
+close all; 
+%% 
+prompt='additional channels to remove? format :[1,2] ';
+x=input(prompt);
+if ~isempty(x)
+    param.channels_deselect=sort([param.channels_deselect,x]);
+    param.channels_selected = setdiff(param.channels,param.channels_deselect);
     t_length=25e4;
     kk_total=ceil(size(signal,1)/t_length);
     x_cell=mat2cell(signal',ones(1,size(signal,2)));
@@ -400,9 +428,7 @@ function []= plot_signal_over_time(signal,param,session_start,plot_title)
     colors=[col_vir(1:floor(size(x_norm_cell,1)/2),:);col_inf(1:(floor(size(x_norm_cell,1)/2)+1),:)];
     for kk=1:kk_total
         clf;
-        set(0,'units','pixels');
-        screen = get(0,'ScreenSize');
-        set(gcf,'color',[.7,.7,.7],'position', screen)
+        set(gcf,'color',[.7,.7,.7],'position',[17,1,2454,1337])
         ax=axes('position',[.02,.02,.95,.95]);
         hold on
         session_end=min([(kk*t_length),size(signal,1)]);
@@ -419,10 +445,21 @@ function []= plot_signal_over_time(signal,param,session_start,plot_title)
         arrayfun(@(x) text(t_window(x),size(x_norm_cell,1)+1,['sess: ',session_name],'VerticalAlignment','bottom','fontsize',20),find(ismember(t_window,session_start)))
         end 
         shg;
-        title({plot_title,[num2str(kk),' of ', num2str(kk_total)]})
+        title({'post common source averaging',[num2str(kk),' of ', num2str(kk_total)]})
         pause
     end
-    
     close all;
 end
 
+%% add the results to subject_op_info
+subject_op_info.op_info.channel_removed_by_user=x;
+subject_op_info.op_info.transmit_chan=param.channels;
+subject_op_info.op_info.unselected_channels=param.channels_deselect;
+subject_op_info.op_info.clean_channels=param.channels_selected;
+subject_op_info.op_info.sampling_rate=sampling_rate;
+subject_op_info.op_info.channel_noise_across_all_sess=signal_noise_before;
+subject_op_info.op_info.channel_denoise_across_all_sess=signal_noise_after;
+output_op_info=subject_op_info;
+
+
+end 

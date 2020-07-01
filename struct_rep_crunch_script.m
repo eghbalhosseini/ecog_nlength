@@ -5,94 +5,40 @@ home;
 %% 
 if 1
     fprintf('adding evlab ecog tools to path \n');
-    %addpath('~/MyCodes/evlab_ecog_tools/');
-    %addpath(genpath('~/MyCodes/evlab_ecog_tools/'));
+    addpath('~/MyCodes/evlab_ecog_tools/');
+    addpath(genpath('~/MyCodes/evlab_ecog_tools/'));
 end 
 %%
-name = 'HS';
-
-subject_name='AMC083';
-experiment_name ='MITNLengthSentences';
+subject_name='AMC026';
+experiment_name ='SWJN';
 
 data_path='~/MyData/ecog-sentence/subjects_raw/';
-save_path='~/MyData/struct_rep/crunched/'; %save it into an experiment specific folder
+save_path='~/MyData/struct_rep/crunched/';
 sub_info_path='~/MyData/struct_rep/sub_operation_info/';
 d= dir([data_path,sprintf('/%s/raw/ECOG*.dat',subject_name)]);
-
-if strcmp(name,'HS') == 1
-    fprintf('adding evlab ecog tools to path (Hannahs computer) \n');
-    addpath('~/GitHub/evlab_ecog_tools');
-    addpath('~/GitHub/evlab_ecog_tools/albany_mex_files');
-    addpath('~/GitHub/evlab_ecog_tools/ecog-filters');
-    addpath('~/GitHub/evlab_matlab_tools/Colormaps');
-    ecog_path = ['~/Desktop/ECOG/'];
-    datapath = [ecog_path filesep 'DATA' filesep experiment_name filesep ];
-    master_sub_info_path = [ecog_path filesep 'subject_op_info_MASTER' filesep];
-    d = dir([datapath subject_name filesep experiment_name filesep 'ECOG001' filesep 'ECOG*.dat']);
-  
-    save_path = [ecog_path 'crunched' filesep experiment_name filesep]; %save it into an experiment specific folder
-    if ~exist(save_path, 'dir')
-        mkdir(save_path)
-    end
-    
-    %save path specifically for expt sub_op_info
-    expt_sub_op_info_savepath = [save_path 'sub_op_info_' experiment_name filesep];
-    
-    if ~exist(expt_sub_op_info_savepath,'dir')
-        mkdir(expt_sub_op_info_savepath)
-    end
-    
-end
-
-if ~exist([sub_info_path subject_name '_operation_info.mat'])
-    %create_sub_operation_info_ALBANY() %could make this do the specific experiment only
-    %need to fix up this script
-end
-
 d_files=transpose(arrayfun(@(x) {strcat(d(x).folder,'/',d(x).name)}, 1:length(d)));
 fprintf(' %d .dat files were found \n', length(d))
 %
+d_subj_op_info=dir(strcat(sub_info_path,'/',subject_name,'_operation_info.mat'));
+d_info=arrayfun(@(x) {strcat(d_subj_op_info(x).folder,'/',d_subj_op_info(x).name)}, 1:length(d_subj_op_info));
 
-%check for subject_op_info in the experiment folder first (visually inspected one would be there) --
-%if it has already been visually inspected just use that one
-%if not, use the master subject_op_info and run find_noise_free_electrodes
-%and save info to experiment folder
-expt_sub_op_info_mat_filename = [expt_sub_op_info_savepath subject_name '_' experiment_name '_operation_info.mat'];
 
-if ~exist(expt_sub_op_info_mat_filename)
-    %create operational info here?
-    d_subj_op_info=dir([master_sub_info_path filesep subject_name '_operation_info.mat']);
-    d_info=arrayfun(@(x) {strcat(d_subj_op_info(x).folder,'/',d_subj_op_info(x).name)}, 1:length(d_subj_op_info));
-    subject_op_info=load(d_info{1},sprintf('%s_op',subject_name));
-    subject_op_info=subject_op_info.([subject_name '_op']);
-else
-    d_subj_op_info=dir(expt_sub_op_info_mat_filename);
-    subject_op_info=load([d_subj_op_info.folder filesep d_subj_op_info.name]);
-    subject_op_info =subject_op_info.subject_op_info; %getting rid of extra layer in struct
-    fprintf([subject_op_info.op_info.subject_name ' data already visually inspected by ' subject_op_info.op_info.visually_inspected_by ' on ' subject_op_info.op_info.visually_inspected_date '. \nLoading data... \n']);
-end
-
-if ~ subject_op_info.op_info.visually_inspected
-    %subject_op_info=subject_op_info.(strcat(subject_name,'_op')); 
-    save_path_sub_op_info = save_path;
-    subject_op_info=find_noise_free_electrodes(d_files,subject_op_info,experiment_name);
-    %save op info that we just created to the experiment specific folder
-    % not necessary because the subject_op_info is saved in the data at the
-    % end of the crunch script, but nice to have in a second location
-    save(expt_sub_op_info_mat_filename, 'subject_op_info' );
-
+subject_op_info=load(d_info{1},sprintf('%s_op',subject_name));
+if ~ subject_op_info.(sprintf('%s_op',subject_name)).op_info.analyzed_by_user
+    subject_op_info=subject_op_info.(strcat(subject_name,'_op'));
+    subject_op_info=find_noise_free_electrodes(d_files,subject_op_info);
 end 
 
 %%
-for i=1:length(d_files)
+for i=9:length(d_files)
     fprintf('extracting %s \n',d_files{i});
-    subject_op_info=load(expt_sub_op_info_mat_filename);
-    %subject_op_info=subject_op_info.(strcat(subject_name,'_op')).op_info;
-    subject_op_info=subject_op_info.subject_op_info.op_info
+    subject_op_info=load(d_info{1},sprintf('%s_op',subject_name));
+    subject_op_info=subject_op_info.(strcat(subject_name,'_op')).op_info;
+    
     output=filter_channels_using_gaussian('datafile',d_files{i},'op_info',subject_op_info);
     subject_name=d(i).folder(strfind(d(i).folder,'AMC')+[0:5]);
     session_name=d(i).name(1:end-4);     
-    % start with an empty structure for data and info 
+    % start with an empty strcuture for data and info 
     dat={};
     info=struct;
     pre_trial_time=0.4; % in sec 
@@ -107,12 +53,13 @@ for i=1:length(d_files)
     trials_value=output.parameters.Stimuli.NumericValue;
     stimuli_value=output.parameters.Stimuli.Value;
     %
+    stim_types={'S','W','N','J'};
     trials_indx=cell2mat(cellfun(@(x) strcmp(x,'TrialNumber'),output.parameters.Stimuli.RowLabels,'UniformOutput',false));
     caption_indx=cell2mat(cellfun(@(x) strcmp(x,'caption'),output.parameters.Stimuli.RowLabels,'UniformOutput',false));
     wordtype_indx=cell2mat(cellfun(@(x) strcmp(x,'Condition'),output.parameters.Stimuli.RowLabels,'UniformOutput',false)) | ...
         cell2mat(cellfun(@(x) strcmp(x,'WordType'),output.parameters.Stimuli.RowLabels,'UniformOutput',false));
     StimType_indx=cell2mat(cellfun(@(x) strcmp(x,'StimType'),output.parameters.Stimuli.RowLabels,'UniformOutput',false));
-    ConditionName_indx=cell2mat(cellfun(@(x) strcmp(x,'ConditionName'),output.parameters.Stimuli.RowLabels,'UniformOutput',false));  
+    ConditionName_indx=cell2mat(cellfun(@(x) strcmp(x,'ConditionName'),output.parameters.Stimuli.RowLabels,'UniformOutput',false))  
     IsRight_indx=cell2mat(cellfun(@(x) strcmp(x,'IsRight'),output.parameters.Stimuli.RowLabels,'UniformOutput',false)) | ...
         cell2mat(cellfun(@(x) strcmp(x,'IsProbeCorrect'),output.parameters.Stimuli.RowLabels,'UniformOutput',false));
     %
@@ -144,14 +91,12 @@ for i=1:length(d_files)
     for k=1:length(trial_seq_cell)
         trial_indx=trial_seq_cell{k};
         % find trial type 
-        %wordtype=trials_value(find(wordtype_indx),trial_for_stimuli_seq==trial_seq_cell{k,2});
-        condition_name=stimuli_value(find(ConditionName_indx),trial_for_stimuli_seq==trial_seq_cell{k,2});
-        %wordtype(isnan(wordtype))=[];
-        if ~isempty(condition_name)
-            %info.word_type{k,1}=stim_types{unique(wordtype)};
-            info.condition_name{k,1}=condition_name;
+        wordtype=trials_value(find(wordtype_indx),trial_for_stimuli_seq==trial_seq_cell{k,2});
+        wordtype(isnan(wordtype))=[];
+        if ~isempty(wordtype)
+            info.word_type{k,1}=stim_types{unique(wordtype)};
         else
-            info.condition_name{k,1}='0';
+            info.word_type{k,1}='0';
         end 
         trial=struct;
         trial_index=[];
@@ -311,29 +256,21 @@ for i=1:length(d_files)
     valid_channels=zeros(size(subject_op_info.transmit_chan));
     valid_channels(subject_op_info.clean_channels)=1;
     info.valid_channels=valid_channels;
-    info.subj_op_info=subject_op_info; 
+    info.subj_op_info=subject_op_info;
     % 
-    eval(strcat(subject_name,'_',session_name,'.data=dat')) 
-    eval(strcat(subject_name,'_',session_name,'.info=info'))
-    
+    eval(strcat(subject_name,'_',session_name,'.data=dat')) ;
+    eval(strcat(subject_name,'_',session_name,'.info=info'));
     %save(strcat(d(i).folder,'/',d(i).name),'data','info','-v7.3');
-    save(strcat(save_path,subject_name,'_',experiment_name,'_',session_name,'_crunched_v3.mat'),strcat(subject_name,'_',session_name),'-v7.3')
+    save(strcat(save_path,subject_name,'_',experiment_name,'_',session_name,'_crunched_v3.mat'),strcat(subject_name,'_',session_name),'-v7.3');
     clear ouput;
     eval(['clear',' ',subject_name,'_',session_name]);
 end
 
 %% create a compressed version of the dataset 
-%clear all 
-%close all 
-subject_id = 'AMC083';
-name = 'HS';
-experiment_name = 'MITNLengthSentences';
-
-if (strcmp(name, "HS") == 1)
-    ecog_path = ['~/Desktop/ECOG/'];
-    save_path = [ecog_path 'crunched' filesep experiment_name filesep] %save it into an experiment specific folder
-    
-end
+clear all 
+close all 
+subject_id='AMC026';
+experiment_name ='SWJN';
 
 if ispc
     % kirsi's computer 
@@ -341,10 +278,7 @@ if ispc
     analysis_path=strcat(data_path,'analysis\distributed_oscilatory_power\');
     d_data= dir(strcat(data_path,'\',subject_id,'*_crunched_v3.mat')); 
     d_data=arrayfun(@(x) strcat(d_data(x).folder,'\',d_data(x).name),[1:length(d_data)]','uni',false); %change '/'
-elseif (strcmp(name,'HS') == 1)
-    d_data = dir([save_path '*_crunched_v3.mat'])
-    d_data=arrayfun(@(x) strcat(d_data(x).folder,filesep,d_data(x).name),[1:length(d_data)]','uni',false);
-else
+else 
     % eghbal's computer 
     data_path='~/MyData/struct_rep/crunched/';
     analysis_path=strcat(data_path,'analysis/distributed_oscilatory_power/');
@@ -352,7 +286,7 @@ else
     d_data=arrayfun(@(x) strcat(d_data(x).folder,'/',d_data(x).name),[1:length(d_data)]','uni',false); %change '/'
 end 
 fprintf(' %d .mat files were found \n', length(d_data));
-%%
+
 for k=1:length(d_data)
     subj=load(d_data{k});
     subj_id=fieldnames(subj);
