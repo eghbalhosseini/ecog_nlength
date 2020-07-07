@@ -82,7 +82,8 @@ end
 
 d_files=transpose(arrayfun(@(x) {strcat(d(x).folder,'/',d(x).name)}, 1:length(d)));
 fprintf(' %d .dat files were found \n', length(d))
-%
+
+%%
 
 %check for subject_op_info in the experiment folder first (visually inspected one would be there) --
 %if it has already been visually inspected just use that one
@@ -91,8 +92,8 @@ fprintf(' %d .dat files were found \n', length(d))
 expt_sub_op_info_mat_filename = [expt_sub_op_info_savepath subject_name '_' experiment_name '_operation_info.mat'];
 
 if ~exist(expt_sub_op_info_mat_filename)
-    %create operational info here?
-    d_subj_op_info=dir([master_sub_info_path filesep subject_name '_operation_info.mat']);
+    d_ops = create_sub_operation_info_ALBANY('save_path', master_sub_info_path)
+    d_subj_op_info=dir([master_sub_info_path filesep subject_name '_op_info.mat']);
     d_info=arrayfun(@(x) {strcat(d_subj_op_info(x).folder,filesep,d_subj_op_info(x).name)}, 1:length(d_subj_op_info));
     subject_op_info=load(d_info{1},sprintf('%s_op',subject_name));
     subject_op_info=subject_op_info.([subject_name '_op']);
