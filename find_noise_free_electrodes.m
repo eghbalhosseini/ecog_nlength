@@ -1,9 +1,9 @@
 function [output_op_info]=find_noise_free_electrodes(datafile,subject_op_info, experiment_name)
     if ~isempty(subject_op_info)
-    %ecog_ch=subject_op_info.op_info.ecog_ch;
-    ref_ch=subject_op_info.op_info.Ref;
-    gnd_ch=subject_op_info.op_info.GND;
-    bad_ch=subject_op_info.op_info.bad_channels;
+    ecog_ch=subject_op_info.ecog_channels;
+    ref_ch=subject_op_info.REF;
+    gnd_ch=subject_op_info.GND;
+    bad_ch=subject_op_info.bad_channels;
     else 
     ecog_ch=[];
     ref_ch=[];
@@ -81,15 +81,21 @@ end
 if length(unique(cellfun(@length,SourceChList)))~=1    || length(unique(sampling_rates))~=1,
    error('error: Data files are too different to be analyzed together!'); 
 end
-if length(unique(cellfun(@length,transmit_channels)))==1 
-    
-    param.channels = transmit_channels{1};
+
+if ~isempty(ecog_ch)
+    param.channels = ecog_ch
+else
+    if length(unique(cellfun(@length,transmit_channels)))==1 
+
+        param.channels = transmit_channels{1};
+    end
+
+    if unique(SourceCh)~=length(param.channels)
+        warning('error: channel ids and number dont match up! changing the param.channels to reflect SourceCh'); 
+        param.channels=[1:(unique(SourceCh))]';
+    %    keyboard
+    end 
 end
-if unique(SourceCh)~=length(param.channels)
-    warning('error: channel ids and number dont match up! changing the param.channels to reflect SourceCh'); 
-    param.channels=[1:(unique(SourceCh))]';
-%    keyboard
-end 
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -174,6 +180,7 @@ for idx_file = 1:length(datafile)
     signal              = [signal;signal_loop]; %#ok<AGROW>
     clear signal_loop
 end
+
 %% plot the dataset throughout 
 session_length=[1;session_length];
 session_start=cumsum(session_length);

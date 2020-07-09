@@ -9,7 +9,7 @@ if 1
     %addpath(genpath('~/MyCodes/evlab_ecog_tools/'));
 end 
 %%
-name = 'GT';
+name = 'HS';
 
 subject_name='AMC082';
 experiment_name ='MITNLengthSentences';
@@ -95,8 +95,9 @@ if ~exist(expt_sub_op_info_mat_filename)
     d_ops = create_sub_operation_info_ALBANY('save_path', master_sub_info_path)
     d_subj_op_info=dir([master_sub_info_path filesep subject_name '_op_info.mat']);
     d_info=arrayfun(@(x) {strcat(d_subj_op_info(x).folder,filesep,d_subj_op_info(x).name)}, 1:length(d_subj_op_info));
-    subject_op_info=load(d_info{1},sprintf('%s_op',subject_name));
-    subject_op_info=subject_op_info.([subject_name '_op']);
+    subject_op_info=load(d_info{1},sprintf('%s_op_info',subject_name));
+    %subject_op_info=subject_op_info.op_info; end
+    subject_op_info=subject_op_info.(strcat(subject_name, '_op_info'));
 else
     d_subj_op_info=dir(expt_sub_op_info_mat_filename);
     subject_op_info=load([d_subj_op_info.folder filesep d_subj_op_info.name]);
@@ -104,7 +105,7 @@ else
     fprintf([subject_op_info.op_info.subject_name ' data already visually inspected by ' subject_op_info.op_info.visually_inspected_by ' on ' subject_op_info.op_info.visually_inspected_date '. \nLoading data... \n']);
 end
 
-if ~ subject_op_info.op_info.visually_inspected
+if ~ subject_op_info.visually_inspected
     %subject_op_info=subject_op_info.(strcat(subject_name,'_op')); 
     save_path_sub_op_info = save_path;
     subject_op_info=find_noise_free_electrodes(d_files,subject_op_info,experiment_name);
