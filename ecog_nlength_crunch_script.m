@@ -1,127 +1,108 @@
 %% extract dat files 
 clear all;
-close all ;
+close all;
 home;
+experiment_name ='MITNLengthSentences';
+subject_name='AMC082';
 %% 
+[ignore,user]=system('whoami');
+if contains(user,'eghbalhosseini')
+        data_path='~/MyData/ecog_nlength/';
+        save_path='~/MyData/ecog_nlength/crunched/';
+        ecog_path='~/MyData/ecog_data/';
+        expt_sub_op_info_savepath='~/MyData/ecog_nlength/sub_operation_info/';
+        code_path='~/MyCodes/evlab_ecog_tools/';
+        sub_raw_pat=[data_path,sprintf('subject_raw/%s/**/ECOG*.dat',subject_name)];
+        
+        master_sub_info_path = [ecog_path filesep 'subject_op_info_MASTER' filesep];
+        sub_info_path=[data_path filesep 'sub_operation_info' filesep];
+
+elseif contains(user,'HS')
+        code_path='~/GitHub/evlab_ecog_tools';    
+        ecog_path = '~/Desktop/ECOG/';
+        data_path = [ecog_path filesep 'DATA' filesep experiment_name filesep ];
+        master_sub_info_path = [ecog_path filesep 'subject_op_info_MASTER' filesep];
+        sub_raw_pat=[data_path subject_name filesep experiment_name filesep 'ECOG001' filesep 'ECOG*.dat'];
+        save_path = [ecog_path 'crunched' filesep experiment_name filesep]; %save it into an experiment specific folder
+        if ~exist(save_path, 'dir')
+            mkdir(save_path);
+        end
+elseif contains(user,'gretatuckute')
+        fprintf('adding evlab ecog tools to path (Greta computer) \n');
+        addpath(genpath('\GitHub\evlab_ecog_tools\'));
+        addpath(genpath('\GitHub\evlab_ecog_tools\ecog-filters\'));
+        addpath(genpath('\GitHub\evlab_ecog_tools\albany_mex_files'));
+        addpath(genpath('\GitHub\evlab_ecog_tools\Colormaps'));
+    
+
+        save_path='C:\Users\greta\Dropbox (MIT)\ECoG_data\crunched\';
+        d=dir([data_path,'\',subject_name,'\DATA\DAY3\MITNLengthSentences\ECOG001\ECOG*.dat']);
+        d_subj_op_info=dir(strcat(sub_info_path,'/',subject_name,'_operation_info.mat'));
+    
+        ecog_path = ['C:\Users\greta\Dropbox (MIT)\ECoG'];
+        data_path = [ecog_path filesep 'DATA' filesep experiment_name filesep ];
+        master_sub_info_path = [ecog_path filesep 'subject_op_info_MASTER'];
+        d = dir([data_path subject_name filesep 'ECOG001' filesep 'ECOG*.dat']);
+    
+        save_path = [ecog_path filesep 'crunched' filesep experiment_name filesep]; %save it into an experiment specific folder
+        if ~exist(save_path, 'dir')
+        mkdir(save_path)
+        end
+    
+        %save path specifically for expt sub_op_info
+        expt_sub_op_info_savepath = [save_path 'sub_op_info_' experiment_name filesep];
+     
+        if ~exist(expt_sub_op_info_savepath,'dir')
+            mkdir(expt_sub_op_info_savepath)
+        end        
+end 
 if 1
     fprintf('adding evlab ecog tools to path \n');
-    %addpath('~/MyCodes/evlab_ecog_tools/');
-    %addpath(genpath('~/MyCodes/evlab_ecog_tools/'));
+    addpath(code_path);
+    addpath(genpath(code_path));
 end 
-%%
-name = 'HS';
+if ~exist(expt_sub_op_info_savepath,'dir'),mkdir(expt_sub_op_info_savepath);end        
 
-subject_name='AMC082';
-experiment_name ='MITNLengthSentences';
-
-data_path='~/MyData/ecog-sentence/subjects_raw/';
-save_path='~/MyData/struct_rep/crunched/'; %save it into an experiment specific folder
-sub_info_path='~/MyData/struct_rep/sub_operation_info/';
-d= dir([data_path,sprintf('/%s/raw/ECOG*.dat',subject_name)]);
-
-if strcmp(name,'HS') == 1
-    fprintf('adding evlab ecog tools to path (Hannahs computer) \n');
-    addpath('~/GitHub/evlab_ecog_tools');
-    addpath('~/GitHub/evlab_ecog_tools/albany_mex_files');
-    addpath('~/GitHub/evlab_ecog_tools/ecog-filters');
-    addpath('~/GitHub/evlab_matlab_tools/Colormaps');
-    ecog_path = ['~/Desktop/ECOG/'];
-    datapath = [ecog_path filesep 'DATA' filesep experiment_name filesep ];
-    master_sub_info_path = [ecog_path filesep 'subject_op_info_MASTER' filesep];
-    d = dir([datapath subject_name filesep experiment_name filesep 'ECOG001' filesep 'ECOG*.dat']);
-
-    save_path = [ecog_path 'crunched' filesep experiment_name filesep]; %save it into an experiment specific folder
-    if ~exist(save_path, 'dir')
-        mkdir(save_path)
-    end
-    
-    %save path specifically for expt sub_op_info
-    expt_sub_op_info_savepath = [save_path 'sub_op_info_' experiment_name filesep];
-    
-    if ~exist(expt_sub_op_info_savepath,'dir')
-        mkdir(expt_sub_op_info_savepath)
-    end
-    
-end
-
-if strcmp(name,'GT') == 1
-    fprintf('adding evlab ecog tools to path (Greta computer) \n');
-    addpath(genpath('\GitHub\evlab_ecog_tools\'));
-    addpath(genpath('\GitHub\evlab_ecog_tools\ecog-filters\'));
-    addpath(genpath('\GitHub\evlab_ecog_tools\albany_mex_files'));
-    addpath(genpath('\GitHub\evlab_ecog_tools\Colormaps'));
-    
-
-    save_path='C:\Users\greta\Dropbox (MIT)\ECoG_data\crunched\';
-    d=dir([data_path,'\',subject_name,'\DATA\DAY3\MITNLengthSentences\ECOG001\ECOG*.dat']);
-    d_subj_op_info=dir(strcat(sub_info_path,'/',subject_name,'_operation_info.mat'));
-    
-    ecog_path = ['C:\Users\greta\Dropbox (MIT)\ECoG'];
-    datapath = [ecog_path filesep 'DATA' filesep experiment_name filesep ];
-    master_sub_info_path = [ecog_path filesep 'subject_op_info_MASTER'];
-    d = dir([datapath subject_name filesep 'ECOG001' filesep 'ECOG*.dat']);
-    
-    save_path = [ecog_path filesep 'crunched' filesep experiment_name filesep]; %save it into an experiment specific folder
-    if ~exist(save_path, 'dir')
-        mkdir(save_path)
-    end
-    
-    %save path specifically for expt sub_op_info
-    expt_sub_op_info_savepath = [save_path 'sub_op_info_' experiment_name filesep];
-    
-    if ~exist(expt_sub_op_info_savepath,'dir')
-        mkdir(expt_sub_op_info_savepath)
-    end
-    
-end
-
-if ~exist([sub_info_path subject_name '_operation_info.mat'])
-    %create_sub_operation_info_ALBANY() %could make this do the specific experiment only
-    %need to fix up this script
-end
-
-d_files=transpose(arrayfun(@(x) {strcat(d(x).folder,'/',d(x).name)}, 1:length(d)));
-fprintf(' %d .dat files were found \n', length(d))
 
 %%
-
 %check for subject_op_info in the experiment folder first (visually inspected one would be there) --
 %if it has already been visually inspected just use that one
 %if not, use the master subject_op_info and run find_noise_free_electrodes
 %and save info to experiment folder
 expt_sub_op_info_mat_filename = [expt_sub_op_info_savepath subject_name '_' experiment_name '_operation_info.mat'];
+d= dir(sub_raw_pat)
+d_files=transpose(arrayfun(@(x) {strcat(d(x).folder,filesep,d(x).name)}, 1:length(d)));
 
 if ~exist(expt_sub_op_info_mat_filename)
-    d_ops = create_sub_operation_info_ALBANY('save_path', master_sub_info_path)
+    d_ops = create_sub_operation_info_ALBANY('save_path', master_sub_info_path);
     d_subj_op_info=dir([master_sub_info_path filesep subject_name '_op_info.mat']);
     d_info=arrayfun(@(x) {strcat(d_subj_op_info(x).folder,filesep,d_subj_op_info(x).name)}, 1:length(d_subj_op_info));
     subject_op_info=load(d_info{1},sprintf('%s_op_info',subject_name));
-    %subject_op_info=subject_op_info.op_info; end
-    subject_op_info=subject_op_info.(strcat(subject_name, '_op_info'));
+    try subject_op_info=subject_op_info.(sprintf('%s_op_info',subject_name));end 
+    
 else
     d_subj_op_info=dir(expt_sub_op_info_mat_filename);
     subject_op_info=load([d_subj_op_info.folder filesep d_subj_op_info.name]);
     subject_op_info =subject_op_info.subject_op_info; %getting rid of extra layer in struct
     fprintf([subject_op_info.op_info.subject_name ' data already visually inspected by ' subject_op_info.op_info.visually_inspected_by ' on ' subject_op_info.op_info.visually_inspected_date '. \nLoading data... \n']);
 end
-
+ 
 if ~ subject_op_info.visually_inspected
     %subject_op_info=subject_op_info.(strcat(subject_name,'_op')); 
     save_path_sub_op_info = save_path;
-    subject_op_info=find_noise_free_electrodes(d_files,subject_op_info,experiment_name);
+    output=find_noise_free_electrodes_v2('datafile',d_files,'op_info',subject_op_info,'exp_name',experiment_name);
     %save op info that we just created to the experiment specific folder
     % not necessary because the subject_op_info is saved in the data at the
     % end of the crunch script, but nice to have in a second location
-    save(expt_sub_op_info_mat_filename, 'subject_op_info' );
-
+    op_info=output.op_info;
+    save(expt_sub_op_info_mat_filename, 'op_info');
 end 
 
 %%
 for i=1:length(d_files)
     fprintf('extracting %s \n',d_files{i});
     subject_op_info=load(expt_sub_op_info_mat_filename);
-    %subject_op_info=subject_op_info.(strcat(subject_name,'_op')).op_info;
-    subject_op_info=subject_op_info.subject_op_info.op_info
+    try subject_op_info=subject_op_info.op_info;end;
     output=filter_channels_using_gaussian('datafile',d_files{i},'op_info',subject_op_info);
     subject_name=d(i).folder(strfind(d(i).folder,'AMC')+[0:5]);
     session_name=d(i).name(1:end-4);     
@@ -131,7 +112,7 @@ for i=1:length(d_files)
     pre_trial_time=0.4; % in sec 
     % step 1: find start and end of trials 
     info.sample_rate=output.parameters.SamplingRate.NumericValue;
-    info.downsample_sampling_rate=output.samplingrate;
+    info.downsample_sampling_rate=output.downsamplingrate;
     % 
     info.pre_trial_samples=info.sample_rate*pre_trial_time;
     info.pre_trial_samples_downsample=info.downsample_sampling_rate*pre_trial_time;
@@ -339,8 +320,8 @@ for i=1:length(d_files)
     info.unselected_channels=output.op_info.unselected_channels;
     info.selected_channels=output.op_info.clean_channels;
     % 
-    info.downsample_sampling_rate=output.samplingrate;
-    info.broadband_defs=output.samplingrate;
+    info.downsample_sampling_rate=output.downsamplingrate;
+    info.gaus_defs=output.gaus_filt_defs;
     valid_channels=zeros(size(subject_op_info.transmit_chan));
     valid_channels(subject_op_info.clean_channels)=1;
     info.valid_channels=valid_channels;
@@ -351,8 +332,9 @@ for i=1:length(d_files)
     
     %save(strcat(d(i).folder,'/',d(i).name),'data','info','-v7.3');
     save(strcat(save_path,subject_name,'_',experiment_name,'_',session_name,'_crunched_v3.mat'),strcat(subject_name,'_',session_name),'-v7.3')
-    clear ouput;
-    eval(['clear',' ',subject_name,'_',session_name]);
+    clearvars -except d_files i subject_name d_info d experiment_name data_path save_path sub_info_path expt_sub_op_info_mat_filename
+
+   
 end
 
 %% create a compressed version of the dataset 
@@ -385,7 +367,7 @@ else
     d_data=arrayfun(@(x) strcat(d_data(x).folder,'/',d_data(x).name),[1:length(d_data)]','uni',false); %change '/'
 end 
 fprintf(' %d .mat files were found \n', length(d_data));
-%%
+%
 for k=1:length(d_data)
     subj=load(d_data{k});
     subj_id=fieldnames(subj);
