@@ -12,21 +12,36 @@ if contains(user,'eghbalhosseini')
         ecog_path='~/MyData/ecog_data/';
         expt_sub_op_info_savepath='~/MyData/ecog_nlength/sub_operation_info/';
         code_path='~/MyCodes/evlab_ecog_tools/';
-        sub_raw_pat=[data_path,sprintf('subject_raw/%s/**/ECOG*.dat',subject_name)];
+        sub_raw_path=[data_path,sprintf('subject_raw/%s/**/ECOG*.dat',subject_name)];
         
         master_sub_info_path = [ecog_path filesep 'subject_op_info_MASTER' filesep];
         sub_info_path=[data_path filesep 'sub_operation_info' filesep];
 
-elseif contains(user,'HS')
+elseif contains(user,'hsmall')
+        fprintf('adding evlab ecog tools to path (Hannah computer) \n');
+        addpath(genpath('~/GitHub/evlab_ecog_tools'));
+        addpath(genpath('~/GitHub/evlab_ecog_tools/ecog-filters/'));
+        addpath(genpath('~/GitHub/evlab_ecog_tools/albany_mex_files'));
+        addpath(genpath('~/GitHub/evlab_matlab_tools/Colormaps'));
+        addpath(genpath('~/GitHub/evlab_matlab_tools/append_pdfs'));
         code_path='~/GitHub/evlab_ecog_tools';    
-        ecog_path = '~/Desktop/ECOG/';
-        data_path = [ecog_path filesep 'DATA' filesep experiment_name filesep ];
+        ecog_path = '~/Desktop/ECOG';
+        data_path = [ecog_path filesep 'DATA' filesep experiment_name];
         master_sub_info_path = [ecog_path filesep 'subject_op_info_MASTER' filesep];
-        sub_raw_pat=[data_path subject_name filesep experiment_name filesep 'ECOG001' filesep 'ECOG*.dat'];
-        save_path = [ecog_path 'crunched' filesep experiment_name filesep]; %save it into an experiment specific folder
-        if ~exist(save_path, 'dir')
+        sub_raw_path=[data_path filesep subject_name filesep experiment_name filesep 'ECOG001' filesep 'ECOG*.dat'];
+        save_path = [ecog_path filesep 'crunched' filesep experiment_name filesep]; %save it into an experiment specific folder
+        plot_save_path = save_path;
+        if ~exist(save_path, 'dir')s
             mkdir(save_path);
         end
+        
+        %save path specifically for expt sub_op_info
+        expt_sub_op_info_savepath = [save_path 'sub_op_info_' experiment_name filesep];
+     
+        if ~exist(expt_sub_op_info_savepath,'dir')
+            mkdir(expt_sub_op_info_savepath)
+        end        
+        
 elseif contains(user,'gretatuckute')
         fprintf('adding evlab ecog tools to path (Greta computer) \n');
         addpath(genpath('\GitHub\evlab_ecog_tools\'));
@@ -70,7 +85,7 @@ if ~exist(expt_sub_op_info_savepath,'dir'),mkdir(expt_sub_op_info_savepath);end
 %if not, use the master subject_op_info and run find_noise_free_electrodes
 %and save info to experiment folder
 expt_sub_op_info_mat_filename = [expt_sub_op_info_savepath subject_name '_' experiment_name '_operation_info.mat'];
-d= dir(sub_raw_pat)
+d= dir(sub_raw_path)
 d_files=transpose(arrayfun(@(x) {strcat(d(x).folder,filesep,d(x).name)}, 1:length(d)));
 
 if ~exist(expt_sub_op_info_mat_filename)
@@ -83,14 +98,15 @@ if ~exist(expt_sub_op_info_mat_filename)
 else
     d_subj_op_info=dir(expt_sub_op_info_mat_filename);
     subject_op_info=load([d_subj_op_info.folder filesep d_subj_op_info.name]);
-    subject_op_info =subject_op_info.subject_op_info; %getting rid of extra layer in struct
-    fprintf([subject_op_info.op_info.subject_name ' data already visually inspected by ' subject_op_info.op_info.visually_inspected_by ' on ' subject_op_info.op_info.visually_inspected_date '. \nLoading data... \n']);
+    try subject_op_info=subject_op_info.op_info;end 
+    %subject_op_info =subject_op_info.subject_op_info; %getting rid of extra layer in struct
+    fprintf([subject_op_info.sub_id ' data already visually inspected by ' subject_op_info.visually_inspected_by ' on ' subject_op_info.visually_inspected_date '. \nLoading data from: ' expt_sub_op_info_mat_filename '..... \n']);
 end
  
 if ~ subject_op_info.visually_inspected
     %subject_op_info=subject_op_info.(strcat(subject_name,'_op')); 
     save_path_sub_op_info = save_path;
-    output=find_noise_free_electrodes_v2('datafile',d_files,'op_info',subject_op_info,'exp_name',experiment_name);
+    output=find_noise_free_electrodes_v2('datafile',d_files,'op_info',subject_op_info,'exp_name',experiment_name,'save_plot', true,'plot_save_path',plot_save_path);
     %save op info that we just created to the experiment specific folder
     % not necessary because the subject_op_info is saved in the data at the
     % end of the crunch script, but nice to have in a second location
