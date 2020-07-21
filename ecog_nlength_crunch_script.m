@@ -23,7 +23,6 @@ elseif contains(user,'hsmall')
         addpath(genpath('~/GitHub/evlab_ecog_tools/ecog-filters/'));
         addpath(genpath('~/GitHub/evlab_ecog_tools/albany_mex_files'));
         addpath(genpath('~/GitHub/evlab_matlab_tools/Colormaps'));
-        addpath(genpath('~/GitHub/evlab_matlab_tools/append_pdfs'));
         code_path='~/GitHub/evlab_ecog_tools';    
         ecog_path = '~/Desktop/ECOG';
         data_path = [ecog_path filesep 'DATA' filesep experiment_name];
