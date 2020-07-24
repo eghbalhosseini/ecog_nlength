@@ -30,7 +30,7 @@ elseif contains(user,'hsmall')
         sub_raw_path=[data_path filesep subject_name filesep experiment_name filesep 'ECOG001' filesep 'ECOG*.dat'];
         save_path = [ecog_path filesep 'crunched' filesep experiment_name filesep]; %save it into an experiment specific folder
         plot_save_path = save_path;
-        if ~exist(save_path, 'dir')s
+        if ~exist(save_path, 'dir')
             mkdir(save_path);
         end
         
@@ -247,6 +247,10 @@ for i=1:length(d_files)
         trial.(strcat('signal','_pre_trial','_hilbert_zs_downsample'))=signal_hilbert_zs_downsample(:,stimuli_downsample_range(1)+[-info.pre_trial_samples_downsample:-1]);
         trial.(strcat('signal_ave','_pre_trial','_hilbert_downsample'))=nanmean(signal_hilbert_downsample(:,stimuli_downsample_range(1)+[-info.pre_trial_samples_downsample:-1]),2);
         trial.(strcat('signal_ave','_pre_trial','_hilbert_zs_downsample'))=nanmean(signal_hilbert_zs_downsample(:,stimuli_downsample_range(1)+[-info.pre_trial_samples_downsample:-1]),2);
+        trial.(strcat('signal','_pre_trial','_gaus_band_hilb_dec'))=arrayfun(@(x) transpose(output.signal_gaus_bands(x).hilbert_dec(pre_trial_idx,:)),1:size(output.signal_gaus_bands,2),'uni',false);
+        trial.(strcat('signal','_pre_trial','_gaus_band_hilb_dec_zs'))=arrayfun(@(x) transpose(output.signal_gaus_bands(x).hilbert_dec_zs(pre_trial_idx,:)),1:size(output.signal_gaus_bands,2),'uni',false);
+        trial.(strcat('signal','_pre_trial','_broadband_hilb_dec'))=cellfun(@(x) x(:,pre_trial_idx),output.signal_broad_bands.hilbert_dec,'uni',false)';
+
         % 
         
         trial.(strcat('signal','_hilbert_downsample_parsed'))=signal_hilbert_downsample_parsed;
