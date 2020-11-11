@@ -1,30 +1,27 @@
 % selection of language specific electrodes by comparing electrode response
-% during pretrial to the electrode response 4 words into any sentence
-% stimulus
+% of the pretrial of a condition and a target word index in that condition
+% or the target word index of two different conditions
 
-%requirements: a pretrial duration, stimuli of more than 4 words per trial
-
-%for each electrode, 
-%1. get the response amplitudes of all of the pretrials
-%2. get the response amplitudes to the fourth word of the non-scrambled
-%trials
-%3. conduct a t-test comparing the pretrial amplitudes to the fourth word
-%amplitudes -- if significant, add this electrode to language responsive
-%electrodes
+%for each electrode the script, 
+%1. gets the response amplitudes to condition1 (or pretrial)
+%2. get the response amplitudes to condition2 (or pretrial)
+%3. conducts a two sample t-test comparing the two conditions (or pretrials) 
+%if significant, adds the electrode to language responsive electrodes
 
 %% clean up workspace
 clear all
 close all
 
-%% parameters
+%% specify parameters
 subject_id = 'AMC096';
 experiment_name = 'MITNLengthSentences';
 condition1 = [{'3sents_8words_intact'},{'6sents_4words_intact'}, {'1sent_24words_intact'}];
-condition2 = [{'3sents_8words_intact'},{'6sents_4words_intact'}, {'1sent_24words_intact'}];
-%condition2 = [{'3sents_8words_scrambled'},{'6sents_4words_scrambled'}, {'1sent_24words_scrambled'}];
-cond1_use_pretrial = false;
+%condition2 = [{'3sents_8words_intact'},{'6sents_4words_intact'}, {'1sent_24words_intact'}];
+%condition1 = [{'3sents_8words_scrambled'},{'6sents_4words_scrambled'}, {'1sent_24words_scrambled'}];
+condition2 = [{'3sents_8words_scrambled'},{'6sents_4words_scrambled'}, {'1sent_24words_scrambled'}];
+cond1_use_pretrial = true;
 cond2_use_pretrial = true;
-cond1_target_word_idx = 8;
+cond1_target_word_idx = 0;
 cond2_target_word_idx = 8;
 data_to_use = "hilbert_zs"; %options: hilbert, hilbert_zs;
 
@@ -44,7 +41,7 @@ crunched_data_path = [ecog_path filesep 'crunched' filesep experiment_name files
 %path specifically for expt sub_op_info
 expt_sub_op_info_path = [crunched_data_path 'sub_op_info_' experiment_name filesep];
 
-%% load the subject's crunched data for the given experiment
+%% extract subject's data for the given experiment
 d_data= dir(strcat(crunched_data_path,filesep,subject_id,'*_crunched.mat'));
 fprintf(' %d .mat files were found \n', length(d_data));
 d_data=arrayfun(@(x) strcat(d_data(x).folder,filesep,d_data(x).name),[1:length(d_data)]','uni',false);
@@ -58,8 +55,6 @@ if(print_statements)fprintf("Using subject %s's %s data from %s for language ele
                                   cond1_target_word_idx, cond2_target_word_idx);
 %% get language electrodes
 [lang_electrodes_list, electrodes] = determine_lang_electrodes(cond1,cond2);
-
-
 
 
 %%
@@ -86,8 +81,6 @@ end
 lang_electrodes = t_test_results;
 
 end
-
-%%
 function [cond1_amplitudes, cond2_amplitudes] = extract_subj_data(d_data,data_to_use, condition1, condition2, cond1_use_pretrial, cond2_use_pretrial, cond1_target_word_idx, cond2_target_word_idx)
 global print_statements
 cond1_amplitudes = [];
@@ -108,7 +101,6 @@ cond2_amplitudes = cell2mat(reshape(cond2_amplitudes,1,[]));
 
 
 end
-
 function [avg_amplitudes] = extract_condition_amplitudes(subj,data_to_use, conditions,use_pretrial, target_word_idx)
 global print_statements
 avg_amplitudes = [];
@@ -118,8 +110,6 @@ for i=1:length(conditions)
     avg_amplitudes = cat(1,avg_amplitudes, extracted_amplitudes);
 end
 end
-
-%% extract relevant conditions
 % subj: struct, a subj's crunched materials, containing info and data structs
 % data_to_use: string, which type of data from the data struct to use
 % cond: string, the condition to extract avg amplitudes from
